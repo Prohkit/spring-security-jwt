@@ -1,0 +1,50 @@
+services:
+  spring-security-jwt:
+    image: spring-security-jwt:latest
+    build:
+      context: .
+    container_name: spring-security-jwt
+    depends_on:
+      - postgresql
+    ports:
+      - 8080:8080
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgresql:5432/jwtsecuritydb
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    container_name: "swagger-ui-container"
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./openapi.yaml:/swagger.yaml
+    environment:
+      SWAGGER_JSON: /swagger.yaml
+
+  postgresql:
+    image: postgres:16
+    container_name: postgresql
+    ports:
+      - 5435:5432
+    environment:
+      POSTGRES_DB: jwtsecuritydb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+  liquibase-migrations:
+    image: liquibase/liquibase:4.25
+    container_name: liquibase_container
+    depends_on:
+      - postgresql
+    command:
+      - --changelog-file=master.xml
+      - --driver=org.postgresql.Driver
+      - --url=jdbc:postgresql://postgresql:5432/jwtsecuritydb
+      - --username=postgres
+      - --password=postgres
+      - update
+    volumes:
+      - ./migration:/liquibase/changelog
